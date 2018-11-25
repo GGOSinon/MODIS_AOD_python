@@ -9,9 +9,6 @@ created by Kevin
 #Open hdf file
 NameError: name 'SD' is not defined
 conda install -c conda-forge pyhdf=0.9.0
-#basemap
-conda install -c conda-forge basemap-data-hires
-conda install -c conda-forge basemap
 '''
 
 from glob import glob
@@ -26,8 +23,10 @@ from queue import Queue
 #fo checking time
 cht_start_time = datetime.now()
 
-dir_name = 'DAAC_MOD04_3K/all/'
-save_dir_name = 'DAAC_MOD04_3K/save/'
+year = 2017
+
+dir_name = 'DAAC_MOD04_3K/' + str(year) + '/'
+save_dir_name = 'DAAC_MOD04_3K/monthly/'
 if not os.path.exists(save_dir_name):
     os.makedirs(save_dir_name)
     print ('*'*80)
@@ -72,7 +71,7 @@ def f(proc_date):
     #Set lon, lat, resolution
     Llon, Rlon = 90, 150
     Slat, Nlat = 10, 60
-    resolution = 0.25
+    resolution = 0.1
     
     write_log += '#Llon =' + str(Llon) + '\n' \
                 + '#Rlon =' + str(Rlon) + '\n' \
@@ -82,7 +81,7 @@ def f(proc_date):
     
     #Make Grid
     print('='*80)
-    print(datetime.now(), proc_start_date, '-', proc_end_date, 'Start making grid arrays...\n')
+    print(proc_start_date, '-', proc_end_date, 'Start making grid arrays...\n')
     
     ni = np.int((Rlon-Llon)/resolution+1.00)
     nj = np.int((Nlat-Slat)/resolution+1.00)
@@ -125,8 +124,8 @@ def f(proc_date):
         
         if file_date >= start_date \
             and file_date < end_date : 
-            print('='*80)
-            print(datetime.now(), 'Start reading HDF file...\n', k)
+            #print('='*80)
+            #print(datetime.now(), 'Start reading HDF file...\n', k)
             
             try:
                 hdf = SD(k, SDC.READ)
@@ -149,8 +148,8 @@ def f(proc_date):
                 print("Something got wrecked \n")
                 continue
                         
-            print('='*80)
-            print('Starting... ', k)
+            #print('='*80)
+            #print('Starting... ', k)
             
             if np.shape(longitude) != np.shape(latitude) or np.shape(latitude) != np.shape(aod) :
                 print('data shape is different!! \n')
@@ -169,10 +168,10 @@ def f(proc_date):
                 file_no += 1
                 total_data_cnt += data_cnt
             write_log += str(file_no) + ',' + str(data_cnt) +',' + str(k) + '\n'
-            print('number of files: ', file_no, 'tatal data cnt :' , data_cnt)
+            print(thread_number, 'number of files: ', file_no, 'tatal data cnt :' , data_cnt)
     write_log += '#total data number =' + str(total_data_cnt) + '\n'
     print('='*80)
-    print(datetime.now(), proc_start_date, '-', proc_end_date, 'Calculating mean value at each pixel is being started ')
+    print(proc_start_date, '-', proc_end_date, 'Calculating mean value at each pixel is being started ')
     
     cnt2 = 0 #for debug
     for i in range(np.shape(result_array)[0]):
@@ -213,8 +212,8 @@ compress_queue = Queue()
 #https://datascienceschool.net/view-notebook/465066ac92ef4da3b0aba32f76d9750a/
 #http://egloos.zum.com/mcchae/v/11203068
 from dateutil.relativedelta import relativedelta
-s_start_date = datetime(2015, 1, 1) #convert startdate to date type
-s_end_date = datetime(2016, 12, 31)
+s_start_date = datetime(year, 1, 1) #convert startdate to date type
+s_end_date = datetime(year, 12, 31)
 
 k=0
 date1 = s_start_date

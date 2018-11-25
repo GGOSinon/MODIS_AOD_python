@@ -14,7 +14,6 @@ conda install -c conda-forge basemap
 from glob import glob
 import numpy as np
 from datetime import datetime
-import calendar
 import os
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
@@ -22,40 +21,23 @@ from mpl_toolkits.basemap import Basemap
 #for checking time
 cht_start_time = datetime.now()
 
-dir_name = 'DAAC_MOD04_3K/all/'
-save_dir_name = 'DAAC_MOD04_3K/save/'
-if not os.path.exists(save_dir_name):
-    os.makedirs(save_dir_name)
-    print ('*'*80)
-    print (save_dir_name, 'is created')
-else :
-    print ('*'*80)
-    print (save_dir_name, 'is exist')
+dir_name = 'DAAC_MOD04_3K/daily/'
 
-#JulianDate_to_date(2018, 131) -- '20180511'
-def JulianDate_to_date(y, jd):
-    month = 1
-    while jd - calendar.monthrange(y,month)[1] > 0 and month <= 12:
-        jd = jd - calendar.monthrange(y,month)[1]
-        month += 1
-    #return datetime(y, month, jd).strftime('%Y%m%d')
-    return datetime(y, month, jd)
-
-#date_to_JulianDate('20180201', '%Y%m%d') -- 2018032
-def date_to_JulianDate(dt, fmt):
-    dt = datetime.strptime(dt, fmt)
-    tt = dt.timetuple()
-    return int('%d%03d' % (tt.tm_year, tt.tm_yday))
-
-#for modis hdf file, filename = 'DAAC_MOD04_3K/H28V05/MOD04_3K.A2014003.0105.006.2015072123557.hdf'
-def filename_to_datetime(filename):
-    fileinfo = filename.split('.')
-    #print('fileinfo', fileinfo)
-    return JulianDate_to_date(int(fileinfo[1][1:5]), int(fileinfo[1][5:8]))
-
+#for modis hdf file, filename = 'DAAC_MOD04_3K/daily/AOD_3K_20150101_20150102_90_150_10_60_0.1.npy'
+def npy_filename_to_fileinfo(filename):
+    fileinfo = filename.split('_')
+    start_date = fileinfo[-7]
+    end_date = fileinfo[-6]
+    resolution = fileinfo[-1][0:3]
+    return start_date, end_date, resolution
     
-f_name = 'AOD_3K_20150728_20150805_90_150_10_60_0.1.npy'
-hdf_data = np.load(save_dir_name+f_name)
+f_name = 'AOD_3K_20150101_20150102_90_150_10_60_0.1.npy'
+start_date, end_date, resolution = npy_filename_to_fileinfo(f_name)
+
+startdate = datetime(int(start_date[0:4]), int(start_date[4:6]), int(start_date[6:8]))
+startdate = startdate.strftime("%d, %b, %Y")
+
+hdf_data = np.load(dir_name+f_name)
 lon_array = hdf_data[0,:,:]
 lat_array = hdf_data[1,:,:]
 aod = hdf_data[2,:,:]
@@ -65,29 +47,37 @@ Slat = np.min(hdf_data[1,:,:])
 Nlat = np.max(hdf_data[1,:,:])
 
 #Plot data on the map
-#print('='*80)
-#print(datetime.now(), proc_start_date, '-', proc_end_date, 'Plotting data on the map')
-plt.figure(figsize=(10, 10))
+print('='*80)
+print('Plotting data on the map......')
+fig = plt.figure(figsize=(10, 10))
+fig.suptitle('MODIS AOD', fontsize=20)
+
+ax = fig.add_subplot(111)
+fig.subplots_adjust(top=0.999)
+ax.set_title('(' + startdate + ')\n', fontsize=16)
+
 # sylender map
-m = Basemap(projection='cyl', resolution='h', \
+ax = Basemap(projection='cyl', resolution='h', \
             llcrnrlat = Slat, urcrnrlat = Nlat, \
             llcrnrlon = Llon, urcrnrlon = Rlon)
-m.drawcoastlines(linewidth=0.25)
-m.drawcountries(linewidth=0.25)
+ax.drawcoastlines(linewidth=0.25)
+ax.drawcountries(linewidth=0.25)
 
-#m.fillcontinents(color='coral',lake_color='aqua')
-#m.drawmapboundary(fill_color='aqua')
+ax.drawparallels(np.arange(-90., 90., 10.), labels=[1, 0, 0, 0])
+ax.drawmeridians(np.arange(-180., 181., 15.), labels=[0, 0, 0, 1])
 
-m.drawparallels(np.arange(-90., 90., 10.), labels=[1, 0, 0, 0])
-m.drawmeridians(np.arange(-180., 181., 15.), labels=[0, 0, 0, 1])
-
-x, y = m(lon_array, lat_array) # convert to projection map
+x, y = ax(lon_array, lat_array) # convert to projection map
 
 plt.pcolormesh(x, y, aod)
 plt.colorbar(cmap='bwr', fraction=0.038, pad=0.04)
+plt.text(150, 5, 'created by guitar79@gs.hs.kr', fontsize=12, style='italic', ha='right', wrap=True)
+plt.text(150, 2, 'The NASA Level-1 and Atmosphere Archive & Distribution System (LAADS) \n Distributed Active Archive Center (DAAC), Goddard Space Flight Center, Greenbelt, MD.', \
+         fontsize=10, style='italic', ha='right', wrap=True)
+ 
 
-plt.title('MODIS AOD', fontsize=20)
-plt.savefig(save_dir_name+f_name[:-4]+'.png', bbox_inches='tight', dpi = 300)
-plt.savefig(save_dir_name+f_name[:-4]+'.pdf', bbox_inches='tight', dpi = 300)
+#plt.annotate('created by guitar79@gs.hs.kr (130, 50)', xy=(130, 10))
+
+plt.savefig(dir_name+f_name[:-4]+'.png', bbox_inches='tight', dpi = 300)
+#plt.savefig(dir_name+f_name[:-4]+'.pdf', bbox_inches='tight', dpi = 300)
 
 plt.show()
