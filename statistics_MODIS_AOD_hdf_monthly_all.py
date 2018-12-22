@@ -28,7 +28,7 @@ resolution = 0.10
 save_dir_name = 'DAAC_MOD04_3K/'+\
     str(Llon)+'_'+str(Rlon)+'_'+\
     str(Slat)+'_'+str(Nlat)+'_'+\
-    str(resolution)+'_weekly/'
+    str(resolution)+'_monthly/'
 if not os.path.exists(save_dir_name):
     os.makedirs(save_dir_name)
     print ('*'*80)

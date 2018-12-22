@@ -9,7 +9,6 @@ created by Kevin
 NameError: name 'SD' is not defined
 conda install -c conda-forge pyhdf=0.9.0
 '''
-
 from glob import glob
 import numpy as np
 from datetime import datetime
@@ -122,7 +121,7 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
             cnt_array.append(cnt_line)
         lat_array = np.array(lat_array)
         lon_array = np.array(lon_array)
-        print('grid arrays are created\n', '='*80)
+        print('Grid array is created\n', '='*80)
         print_working_time()
         
         total_data_cnt = 0
@@ -155,12 +154,11 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
                     lon = hdf.select('Longitude')
                     longitude = lon[:,:]
                 except:
-                    print("Something got wrecked \n")
+                    print("Something got wrecked \n", '='*80)
                     continue
                             
                 if np.shape(longitude) != np.shape(latitude) or np.shape(latitude) != np.shape(aod) :
-                    print('data shape is different!! \n')
-                    print('='*80)
+                    print('data shape is different!! \n', '='*80)
                 else : 
                     lon_cood = np.array(((longitude-Llon)/resolution*100//100), dtype=np.uint16)
                     lat_cood = np.array(((Nlat-latitude)/resolution*100//100), dtype=np.uint16)
@@ -205,7 +203,6 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
             f.write(write_log)
         return mean_array, cnt_array
     else : 
-        print('='*80) 
         print(save_dir_name+'AOD_3K_'+proc_start_date+'_'+proc_end_date\
                 +'_'+str(Llon)+'_'+str(Rlon)\
                 +'_'+str(Slat)+'_'+str(Nlat)+'_'+str(resolution)+'.npy is exist\n', '$'*80)
@@ -214,7 +211,7 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
     print('Thread '+str(thread_number)+' finished')
     print_working_time()
 #%%
-years = range(2000, 2018)
+years = range(2000, 2019)
 for year in years :
     dir_name = 'DAAC_MOD04_3K/' + str(year) + '/'
     print_lock = threading.Lock()
@@ -230,27 +227,27 @@ for year in years :
     s_start_date = datetime(year, 1, 1) #convert startdate to date type
     s_end_date = datetime(year, 12, 31)
     
-    k=0
+    date_No=0
     date1 = s_start_date
     date2 = s_start_date
     dates = []
     while date2 < s_end_date : 
-        k += 1
+        date_No += 1
 
         if L3_perid == 'daily' :
             date2 = date1 + relativedelta(days=1)
-        if L3_perid == 'weekly' :
+        elif L3_perid == 'weekly' :
             date2 = date1 + relativedelta(days=8)
-        if L3_perid == 'monthly' :
-            date2 = date1 + relativedelta(month=1)
+        elif L3_perid == 'monthly' :
+            date2 = date1 + relativedelta(months=1)
 
         date1_strf = date1.strftime('%Y%m%d')
         date2_strf = date2.strftime('%Y%m%d')
-        date = (date1_strf, date2_strf, k)
+        date = (date1_strf, date2_strf, date_No)
         dates.append(date)
         date1 = date2
     
-    num_cpu = 14
+    num_cpu = 8
     
     for i in range(num_cpu):
         t = threading.Thread(target=process_queue)
