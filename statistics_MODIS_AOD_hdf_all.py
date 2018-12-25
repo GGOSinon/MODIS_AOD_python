@@ -36,11 +36,9 @@ def print_working_time():
 #Set lon, lat, resolution
 Llon, Rlon = 90, 150
 Slat, Nlat = 10, 60
-resolution = 0.10
-save_dir_name = 'DAAC_MOD04_3K/'+\
-    str(Llon)+'_'+str(Rlon)+'_'+\
-    str(Slat)+'_'+str(Nlat)+'_'+\
-    str(resolution)+'_'+L3_perid+'/'
+resolution = 0.05
+save_dir_name = '../DAAC_MOD04_3K/{0:03}_{1:03}_{2:2d}_{3:2d}_{4:.2f}_{5}/'\
+    .format(Llon, Rlon, Slat, Nlat, resolution, L3_perid)
 if not os.path.exists(save_dir_name):
     os.makedirs(save_dir_name)
     print ('*'*80)
@@ -64,11 +62,11 @@ def date_to_JulianDate(dt, fmt):
     tt = dt.timetuple()
     return int('%d%03d' % (tt.tm_year, tt.tm_yday))
 
-#for modis hdf file, filename = 'DAAC_MOD04_3K/H28V05/MOD04_3K.A2014003.0105.006.2015072123557.hdf'
+#for modis hdf file, filename = '../DAAC_MOD04_3K/H28V05/MOD04_3K.A2014003.0105.006.2015072123557.hdf'
 def filename_to_datetime(filename):
     fileinfo = filename.split('.')
     #print('fileinfo', fileinfo)
-    return JulianDate_to_date(int(fileinfo[1][1:5]), int(fileinfo[1][5:8]))
+    return JulianDate_to_date(int(fileinfo[-5][1:5]), int(fileinfo[-5][5:8]))
 
 def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
     proc_start_date = proc_date[0]
@@ -81,12 +79,10 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
     #variables for downloading 
     start_date = datetime(int(proc_start_date[:4]), int(proc_start_date[4:6]), int(proc_start_date[6:8])) #convert startdate to date type
     end_date = datetime(int(proc_end_date[:4]), int(proc_end_date[4:6]), int(proc_end_date[6:8])) #convert startdate to date type
-    if not os.path.exists(save_dir_name+'/AOD_3K_'+proc_start_date+'_'+proc_end_date\
-            +'_'+str(Llon)+'_'+str(Rlon)+'_'+str(Slat)+'_'+str(Nlat)\
-            +'_'+str(resolution)+'.npy') \
-        or not os.path.exists(save_dir_name+'/AOD_3K_'+proc_start_date+'_'+proc_end_date\
-            +'_'+str(Llon)+'_'+str(Rlon)+'_'+str(Slat)+'_'+str(Nlat)\
-            +'_'+str(resolution)+'_info.txt'):
+    if not os.path.exists('{0}AOD_3K_{1}_{2}_{3:03}_{4:03}_{5:2d}_{6:2d}_{7:.2f}.npy'\
+                          .format(save_dir_name, proc_start_date, proc_end_date, Llon, Rlon, Slat, Nlat, resolution)) \
+        or not os.path.exists('{0}AOD_3K_{1}_{2}_{3:03}_{4:03}_{5:2d}_{6:2d}_{7:.2f}_info.txt'\
+                          .format(save_dir_name, proc_start_date, proc_end_date, Llon, Rlon, Slat, Nlat, resolution)) :
     
         write_log += '#Llon =' + str(Llon) + '\n' \
                     + '#Rlon =' + str(Rlon) + '\n' \
@@ -191,21 +187,17 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
         mean_array = np.array(mean_array)
         cnt_array = np.array(cnt_array)    
         save_array = np.array([lon_array, lat_array, mean_array])
-        np.save(save_dir_name+'/AOD_3K_'+proc_start_date+'_'+proc_end_date\
-                +'_'+str(Llon)+'_'+str(Rlon)+'_'+str(Slat)+'_'+str(Nlat)\
-                +'_'+str(resolution)+'.npy', save_array)
-        print(save_dir_name+'AOD_3K_'+proc_start_date+'_'+proc_end_date\
-                +'_'+str(Llon)+'_'+str(Rlon)\
-                +'_'+str(Slat)+'_'+str(Nlat)+'_'+str(resolution)+'.npy is creaated\n', '#'*80)
-        with open('%sAOD_3K_%s_%s_%s_%s_%s_%s_%s_info.txt' \
-                  % (save_dir_name, proc_start_date, proc_end_date,\
-                  str(Llon), str(Rlon), str(Slat), str(Nlat), str(resolution)), 'w') as f:
+        np.save('{0}AOD_3K_{1}_{2}_{3:03}_{4:03}_{5:2d}_{6:2d}_{7:.2f}.npy'\
+                .format(save_dir_name, proc_start_date, proc_end_date, Llon, Rlon, Slat, Nlat, resolution), save_array)
+        print('{0}AOD_3K_{1}_{2}_{3:03}_{4:03}_{5:2d}_{6:2d}_{7:.2f}.npy is creaated\n'\
+              .format(save_dir_name, proc_start_date, proc_end_date, Llon, Rlon, Slat, Nlat, resolution), '#'*80)
+        with open('{0}AOD_3K_{1}_{2}_{3:03}_{4:03}_{5:2d}_{6:2d}_{7:.2f}_info.txt'\
+                .format(save_dir_name, proc_start_date, proc_end_date, Llon, Rlon, Slat, Nlat, resolution), 'w') as f:
             f.write(write_log)
         return mean_array, cnt_array
     else : 
-        print(save_dir_name+'AOD_3K_'+proc_start_date+'_'+proc_end_date\
-                +'_'+str(Llon)+'_'+str(Rlon)\
-                +'_'+str(Slat)+'_'+str(Nlat)+'_'+str(resolution)+'.npy is exist\n', '$'*80)
+        print('{0}AOD_3K_{1}_{2}_{3:03}_{4:03}_{5:2d}_{6:2d}_{7:.2f}.npy is exist\n'\
+              .format(save_dir_name, proc_start_date, proc_end_date, Llon, Rlon, Slat, Nlat, resolution), '$'*80)
         return 
 
     print('Thread '+str(thread_number)+' finished')
@@ -213,7 +205,7 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
 #%%
 years = range(2000, 2019)
 for year in years :
-    dir_name = 'DAAC_MOD04_3K/' + str(year) + '/'
+    dir_name = '../DAAC_MOD04_3K/' + str(year) + '/'
     print_lock = threading.Lock()
     def process_queue():
         while True:
@@ -233,7 +225,6 @@ for year in years :
     dates = []
     while date2 < s_end_date : 
         date_No += 1
-
         if L3_perid == 'daily' :
             date2 = date1 + relativedelta(days=1)
         elif L3_perid == 'weekly' :
@@ -247,7 +238,7 @@ for year in years :
         dates.append(date)
         date1 = date2
     
-    num_cpu = 8
+    num_cpu = 14
     
     for i in range(num_cpu):
         t = threading.Thread(target=process_queue)
