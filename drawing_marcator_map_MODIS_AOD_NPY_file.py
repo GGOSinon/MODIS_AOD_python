@@ -5,6 +5,10 @@ Created on Sat Nov  3 20:34:47 2018
 @author: guitar79
 created by Kevin 
 
+#Open hdf file
+NameError: name 'SD' is not defined
+conda install -c conda-forge pyhdf=0.9.0
+
 #basemap
 conda install -c conda-forge basemap-data-hires
 conda install -c conda-forge basemap
@@ -30,7 +34,7 @@ else :
     print('input daily weekly monthly')
     sys.exit()
     
-dir_name = '../DAAC_MOD04_3K/090_150_10_60_0.10_{0}/'.format(L3_perid)
+dir_name = '../DAAC_MOD04_3K/090_150_10_60_0.05_{0}/'.format(L3_perid)
 save_dir_name = '../DAAC_MOD04_3K/090_150_10_60_0.10_{0}_cyl/'.format(L3_perid)
 #%%
 #for checking time

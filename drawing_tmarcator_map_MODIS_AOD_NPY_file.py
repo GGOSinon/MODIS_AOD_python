@@ -30,7 +30,7 @@ else :
     print('input daily weekly monthly')
     sys.exit()
     
-dir_name = '../DAAC_MOD04_3K/090_150_10_60_0.10_{0}/'.format(L3_perid)
+dir_name = '../DAAC_MOD04_3K/090_150_10_60_0.05_{0}/'.format(L3_perid)
 save_dir_name = '../DAAC_MOD04_3K/090_150_10_60_0.10_{0}_cyl/'.format(L3_perid)
 #%%
 #for checking time
