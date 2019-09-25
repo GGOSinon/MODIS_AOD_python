@@ -15,9 +15,41 @@ import numpy as np
 from datetime import datetime
 import calendar
 import os
-from pyhdf.SD import SD, SDC
-import threading
+#from pyhdf.SD import SD, SDC
+
+# Multiprocessing instead of multithreading
+
+#import threading
+import multiprocessing as proc
+
+# I love the OOP way.(Custom class for multiprocessing)
+class Multiprocessor():
+    def __init__(self):
+        self.processes = []
+        self.queue = proc.Queue()
+
+    @staticmethod
+    def _wrapper(func, queue, args, kwargs):
+        ret = func(*args, **kwargs)
+        queue.put(ret)
+
+    def run(self, func, *args, **kwargs):
+        args2 = [func, self.queue, args, kwargs]
+        p = proc.Process(target=self._wrapper, args=args2)
+        self.processes.append(p)
+        p.start()
+
+    def wait(self):
+        rets = []
+        for p in self.processes:
+            ret = self.queue.get()
+            rets.append(ret)
+        for p in self.processes:
+            p.join()
+        return rets
+
 from queue import Queue
+
 #%%
 #fof checking time
 cht_start_time = datetime.now()
@@ -200,10 +232,21 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
     working_time = (datetime.now() - cht_start_time) #total days for downloading
     print('working time :', working_time, '='*80)
     return mean_array, cnt_array
+
+def simplerf(proc_date):
+    return f(proc_date, resolution, Llon, Rlon, Slat, Nlat)
 #%%
+
+myMP = Multiprocessor()
+
 years = range(2000, 2019)
 for year in years :
     dir_name = base_dir_name + str(year) + '/'
+
+    # Original multithreading code
+    # No break in while loop...?(May caused segmentation fault)
+    # It looks like the code requires "if file_data is None: break"
+    '''
     print_lock = threading.Lock()
     def process_queue():
         while True:
@@ -211,7 +254,7 @@ for year in years :
             f(file_data, resolution, Llon, Rlon, Slat, Nlat)
             compress_queue.task_done()
     compress_queue = Queue()
-    
+    '''
     #%%
     from dateutil.relativedelta import relativedelta
     s_start_date = datetime(year, 1, 1) #convert startdate to date type
@@ -231,8 +274,8 @@ for year in years :
         dates.append(date)
         date1 = date2
     
-    num_cpu = 11
-    
+    #num_cpu = 11
+    '''
     for i in range(num_cpu):
         t = threading.Thread(target=process_queue)
         t.daemon = True
@@ -240,5 +283,11 @@ for year in years :
     
     for date in dates :
         compress_queue.put(date)
-    
+
     compress_queue.join()
+    '''
+
+    for date in dates:
+        myMP.run(simplerf, date)
+
+    values = myMP.wait()
