@@ -22,6 +22,8 @@ import os
 #import threading
 import multiprocessing as proc
 
+myQueue = proc.Manager().Queue()
+
 # I love the OOP way.(Custom class for multiprocessing)
 class Multiprocessor():
     def __init__(self):
@@ -29,23 +31,30 @@ class Multiprocessor():
         self.queue = proc.Queue()
 
     @staticmethod
-    def _wrapper(func, queue, args, kwargs):
+    def _wrapper(func, args, kwargs):
         ret = func(*args, **kwargs)
-        queue.put(ret)
+        myQueue.put(ret)
+
+    def restart(self):
+        self.processes = []
+        self.queue = proc.Queue()
 
     def run(self, func, *args, **kwargs):
-        args2 = [func, self.queue, args, kwargs]
+        args2 = [func, args, kwargs]
         p = proc.Process(target=self._wrapper, args=args2)
         self.processes.append(p)
         p.start()
 
     def wait(self):
-        rets = []
-        for p in self.processes:
-            ret = self.queue.get()
-            rets.append(ret)
         for p in self.processes:
             p.join()
+        rets = []
+        for p in self.processes:
+            ret = myQueue.get_nowait()
+	        
+            rets.append(ret)
+        for p in self.processes:
+            p.terminate()
         return rets
 
 from queue import Queue
@@ -148,6 +157,7 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
         file_no=0
         write_log += '#processing file list\n' + 'No, filename, data \n'
         
+        result_array = np.zeros((1, 1, 1))
         for k in sorted(glob(os.path.join(dir_name, '*.hdf'))):
             result_array = data_array
             file_date = filename_to_datetime(k)
@@ -220,13 +230,19 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
                   % (save_dir_name, proc_start_date, proc_end_date,\
                   str(Llon), str(Rlon), str(Slat), str(Nlat), str(resolution)), 'w') as f:
             f.write(write_log)
-        return mean_array, cnt_array
+        print('returned mean and cnt_array')
+        print('Thread '+str(thread_number)+' finished')
+        return 0 # Return a dummy value
+        # Putting large values in Queue was slow than expected(~10min)
+        #return mean_array, cnt_array
     else : 
         print('='*80) 
         print(save_dir_name+'AOD_3K_'+proc_start_date+'_'+proc_end_date\
                 +'_'+str(Llon)+'_'+str(Rlon)\
                 +'_'+str(Slat)+'_'+str(Nlat)+'_'+str(resolution)+'.npy is exist\n', '$'*80)
-        return 
+        print('None')
+        print('Thread '+str(thread_number)+' finished')
+        return 0 
 
     print('Thread '+str(thread_number)+' finished')
     working_time = (datetime.now() - cht_start_time) #total days for downloading
@@ -234,13 +250,16 @@ def f(proc_date, resolution, Llon, Rlon, Slat, Nlat):
     return mean_array, cnt_array
 
 def simplerf(proc_date):
-    return f(proc_date, resolution, Llon, Rlon, Slat, Nlat)
+    ret = f(proc_date, resolution, Llon, Rlon, Slat, Nlat)
+    print(ret, "LOL")
+    return ret
 #%%
 
 myMP = Multiprocessor()
 
 years = range(2000, 2019)
-for year in years :
+
+for year in years:
     dir_name = base_dir_name + str(year) + '/'
 
     # Original multithreading code
@@ -274,7 +293,7 @@ for year in years :
         dates.append(date)
         date1 = date2
     
-    #num_cpu = 11
+    num_cpu = 10
     '''
     for i in range(num_cpu):
         t = threading.Thread(target=process_queue)
@@ -286,8 +305,16 @@ for year in years :
 
     compress_queue.join()
     '''
+    
+    values = []
+    num_batches = len(dates) // num_cpu + 1
+    for batch in range(num_batches):
+        myMP.restart()
+        for date in dates[batch*num_cpu:(batch+1)*num_cpu]:
+            myMP.run(simplerf, date)
+        print("Batch " + str(batch))
+        myMP.wait()
+        #values.append(myMP.wait())
+        print("OK batch" + str(batch))
+    
 
-    for date in dates:
-        myMP.run(simplerf, date)
-
-    values = myMP.wait()
